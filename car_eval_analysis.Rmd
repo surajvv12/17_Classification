@@ -1,0 +1,354 @@
+---
+title: "Car Evaluation Analysis"
+author: "Suraj Vidyadaran"
+date: "Sunday, February 21, 2016"
+output: html_document
+---
+
+
+
+
+###1)Load the data
+```{r}
+car_eval <- read.csv("F:/Analysis_Practice/Classification/Car Evaluation/car.data.txt", header=FALSE)
+colnames(car_eval)<-c("buying","maint","doors","persons","lug_boot","safety","class")
+head(car_eval)
+```
+
+###2)Exploratory Data Analysis
+```{r}
+summary(car_eval)
+str(car_eval)
+```
+
+##3)Classification Analysis
+###A)Linear Classification
+####1)Logistic Regression
+```{r,warning=FALSE,message=FALSE}
+library(VGAM)
+
+#Build the model
+model1<-vglm(class~buying+maint+doors+persons+lug_boot+safety,family = "multinomial",data=car_eval)
+
+#Summarize the model
+summary(model1)
+
+#Predict using the model
+x<-car_eval[,1:6]
+y<-car_eval[,7]
+probability<-predict(model1,x,type="response")
+car_eval$pred_log_reg<-apply(probability,1,which.max)
+car_eval$pred_log_reg[which(car_eval$pred_log_reg=="1")]<-levels(car_eval$class)[1]
+car_eval$pred_log_reg[which(car_eval$pred_log_reg=="2")]<-levels(car_eval$class)[2]
+car_eval$pred_log_reg[which(car_eval$pred_log_reg=="3")]<-levels(car_eval$class)[3]
+car_eval$pred_log_reg[which(car_eval$pred_log_reg=="4")]<-levels(car_eval$class)[4]
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_log_reg,car_eval$class)
+library(caret)
+confusionMatrix(mtab)
+```
+
+####2)Linear Discriminant Analysis
+```{r,warning=FALSE,message=FALSE}
+library(MASS)
+
+#Build the model
+model2<-lda(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval)
+
+#Summarize the model
+summary(model2)
+
+#Predict using the model
+car_eval$pred_lda<-predict(model2,x)$class
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_lda,car_eval$class)
+confusionMatrix(mtab)
+```
+
+###B)Non-Linear Classification
+####1)Mixture Discriminant Analysis
+```{r,warning=FALSE,message=FALSE}
+library(mda)
+
+#Build the model
+model3<-mda(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval)
+
+#Summarize the model
+summary(model3)
+
+#Predict using the model
+car_eval$pred_mda<-predict(model3,x)
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_mda,car_eval$class)
+confusionMatrix(mtab)
+```
+
+####2)Quadratic Discriminant Analysis
+
+```{r,warning=FALSE,message=FALSE,eval=FALSE}
+
+library(MASS)
+
+#Build the model
+model4<-qda(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval)
+
+#Summarize the model
+summary(model4)
+
+#Predict using the model
+car_eval$pred_qda<-predict(model4,x)
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_qda,car_eval$class)
+confusionMatrix(mtab)
+````
+
+####3)Regularized Discriminant Analysis
+
+````{r,warning=FALSE,message=FALSE}
+library(klaR)
+
+#Build the model
+model5<-rda(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval,gamma = 0.05,lambda = 0.01)
+
+#Summarize the model
+summary(model5)
+
+#Predict using the model
+car_eval$pred_rda<-predict(model5,x)$class
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_rda,car_eval$class)
+confusionMatrix(mtab)
+```
+
+####4)Neural Network
+```{r,warning=FALSE,message=FALSE}
+library(nnet)
+
+#Build the model
+model6<-nnet(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval,size = 4,decay = 0.0001,maxit = 500)
+
+#Summarize the model
+summary(model6)
+
+#Predict using the model
+car_eval$pred_nnet<-predict(model6,x,type="class")
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_nnet,car_eval$class)
+confusionMatrix(mtab)
+`````
+
+###5)Flexible Discriminant Analysis
+```{r,message=FALSE,warning=FALSE}
+library(mda)
+
+#Build the model
+model7<-fda(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval)
+
+#Summarize the model
+summary(model7)
+
+#Predict using the model
+car_eval$pred_fda<-predict(model7,x,type="class")
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_fda,car_eval$class)
+confusionMatrix(mtab)
+```
+
+####6)Support Vector Machine
+
+```{r,message=FALSE,warning=FALSE}
+library(kernlab)
+
+#Build the model
+model8<-ksvm(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval)
+
+#Summarize the model
+summary(model8)
+
+#Predict using the model
+car_eval$pred_svm<-predict(model8,x,type="response")
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_svm,car_eval$class)
+confusionMatrix(mtab)
+```
+
+####7)k-Nearest Neighbors
+
+```{r,message=FALSE,warning=FALSE}
+library(caret)
+
+#Build the model
+model9<-knn3(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval,k=5)
+
+#Summarize the model
+summary(model9)
+
+#Predict using the model
+car_eval$pred_knn<-predict(model9,x,type="class")
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_knn,car_eval$class)
+confusionMatrix(mtab)
+```
+
+####8)Naive Bayes
+```{r,message=FALSE,warning=FALSE}
+library(e1071)
+
+#Build the model
+model10<-naiveBayes(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval,k=5)
+
+#Summarize the model
+summary(model10)
+
+#Predict using the model
+car_eval$pred_naive<-predict(model10,x)
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_naive,car_eval$class)
+confusionMatrix(mtab)
+```
+
+###C)Non-Linear Classification with Decision Trees
+
+####1)Classification and Regression Trees(CART)
+
+```{r,message=FALSE,warning=FALSE}
+library(rpart)
+
+#Build the model
+model11<-rpart(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval)
+
+#Summarize the model
+summary(model11)
+
+#Predict using the model
+car_eval$pred_cart<-predict(model11,x,type="class")
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_cart,car_eval$class)
+confusionMatrix(mtab)
+```
+
+####2)C4.5
+
+```{r,message=FALSE,warning=FALSE}
+library(RWeka)
+
+#Build the model
+model12<-J48(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval)
+
+#Summarize the model
+summary(model12)
+
+#Predict using the model
+car_eval$pred_c45<-predict(model12,x)
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_c45,car_eval$class)
+confusionMatrix(mtab)
+```
+
+####3)PART
+
+```{r,message=FALSE,warning=FALSE}
+library(RWeka)
+
+#Build the model
+model13<-PART(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval)
+
+#Summarize the model
+summary(model13)
+
+#Predict using the model
+car_eval$pred_part<-predict(model13,x)
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_part,car_eval$class)
+confusionMatrix(mtab)
+```
+
+####4)Bagging CART
+
+```{r,message=FALSE,warning=FALSE}
+library(ipred)
+
+#Build the model
+model14<-bagging(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval)
+
+#Summarize the model
+summary(model14)
+
+#Predict using the model
+car_eval$pred_bagging<-predict(model14,x)
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_bagging,car_eval$class)
+confusionMatrix(mtab)
+```
+
+####5)Random Forest
+
+```{r,message=FALSE,warning=FALSE}
+library(randomForest)
+
+#Build the model
+model15<-randomForest(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval)
+
+#Summarize the model
+summary(model15)
+
+#Predict using the model
+car_eval$pred_randomforest<-predict(model15,x)
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_randomforest,car_eval$class)
+confusionMatrix(mtab)
+```
+
+####6)Gradient Boosted Machine
+
+```{r,message=FALSE,warning=FALSE}
+library(gbm)
+
+#Build the model
+model16<-gbm(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval,distribution="multinomial")
+
+#Summarize the model
+summary(model16)
+
+#Predict using the model
+probability<-predict(model16,x,n.trees=1)
+car_eval$pred_gbm<-colnames(probability)[apply(probability,1,which.max)]
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_gbm,car_eval$class)
+mtab
+```
+
+####7)Boosted C5.0
+
+```{r,message=FALSE,warning=FALSE}
+library(C50)
+
+#Build the model
+model17<-C5.0(class~buying+maint+doors+persons+lug_boot+safety,data=car_eval,trials=10)
+
+#Summarize the model
+summary(model17)
+
+#Predict using the model
+car_eval$pred_c50<-predict(model17,x)
+
+#Accuracy of the model
+mtab<-table(car_eval$pred_c50,car_eval$class)
+confusionMatrix(mtab)
+```
